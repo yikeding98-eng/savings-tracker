@@ -134,6 +134,8 @@ git push
 **但要用起来，必须先满足两个条件：**
 
 1. **付费开发者账号（$99/年）** —— 小组件读 App 数据只能走 App Group，免费 Apple ID 的描述文件里没有这个授权，装上也会一直显示「打开存款管家」。换签名器、勾自定义 entitlements 都没用，问题不在签名器而在描述文件。
+
+   > 另外：淘宝/签名平台买的企业证书（第三方签名）同样不行 —— 它只给你主 App 一个 Bundle ID 的签名，无法创建 App Group，而且证书随时可能被吊销导致 App 直接打不开。要小组件只能自己开 $99 账号。
 2. **用一次 Xcode 创建 Widget 扩展 target** —— 扩展是项目里独立的 target、独立 Bundle ID，只能在 Xcode 里建。租一小时云 Mac（MacinCloud/MacStadium，$1~2/小时）就能做完，15 分钟。
 
 完整操作步骤（Apple 后台配 App Group → Xcode 建扩展 → Codemagic 自动签名 → TestFlight 装机）写在 **[docs/小组件配置步骤.md](docs/小组件配置步骤.md)**。
