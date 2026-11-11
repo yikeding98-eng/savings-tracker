@@ -34,15 +34,15 @@ workflows:
   # 路线二：已签名 + 自动上传 TestFlight（有自己的 p12 / 付费开发者账号就选这条）
   # 使用前必须做三件事，详见 docs/TestFlight上线步骤.md：
   #   1. App Store Connect 里建好 App 记录（Bundle ID: com.personal.savingsTracker）
-  #   2. Codemagic → Teams → Integrations → Developer Portal 里添加 App Store Connect API Key
+  #   2. Codemagic → Teams → Integrations → Developer Portal 里添加 App Store Connect API Key，
+  #      名字必须叫 savings_key（和下面 integrations 里的一致）
   #   3. Codemagic → App → Settings → Code signing identities 里上传 p12 + App Store 描述文件
-  # 然后把下面的 REPLACE_WITH_YOUR_KEY_NAME 换成第 2 步里起的名字
   ios-testflight:
     name: iOS 已签名并上传 TestFlight
     instance_type: mac_mini_m2
     max_build_duration: 90
     integrations:
-      app_store_connect: REPLACE_WITH_YOUR_KEY_NAME
+      app_store_connect: savings_key
     environment:
       flutter: stable
       xcode: latest
