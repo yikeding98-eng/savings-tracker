@@ -1,0 +1,61 @@
+workflows:
+  # 路线一：免费 Apple ID 侧载（不含主屏幕小组件，小组件需要 App Group）
+  ios-personal:
+    name: iOS 未签名 IPA（配 Sideloadly / AltStore 自签安装）
+    instance_type: mac_mini_m2
+    max_build_duration: 60
+    environment:
+      flutter: stable
+      xcode: latest
+      vars:
+        BUNDLE_ID: com.personal.savingsTracker
+    scripts:
+      - name: Get Flutter packages
+        script: |
+          flutter pub get
+      - name: Analyze
+        script: |
+          flutter analyze || echo "analyze warnings ignored"
+      - name: Build unsigned iOS release
+        script: |
+          set -e
+          flutter build ios --release --no-codesign
+          cd build/ios/iphoneos
+          rm -rf Payload SavingsTracker.ipa
+          mkdir Payload
+          cp -R Runner.app Payload/Runner.app
+          zip -qry SavingsTracker.ipa Payload
+          ls -lh SavingsTracker.ipa
+    artifacts:
+      - build/ios/iphoneos/SavingsTracker.ipa
+      - build/ios/iphoneos/Runner.app
+
+  # 路线二：带主屏幕小组件（需 $99 开发者账号 + 已上传签名证书/描述文件 + App Store Connect 集成）
+  # 使用前请看 docs/小组件配置步骤.md，并把 integrations.app_store_connect 换成你在
+  # Codemagic Teams → Integrations 里建的 Key 名称；ios_signing 需要先在
+  # App Settings → Code signing identities 里上传 Distribution 证书和 App Store 描述文件。
+  ios-testflight:
+    name: iOS 带小组件（TestFlight，需付费账号）
+    instance_type: mac_mini_m2
+    max_build_duration: 90
+    integrations:
+      app_store_connect: REPLACE_WITH_YOUR_KEY_NAME
+    environment:
+      flutter: stable
+      xcode: latest
+      ios_signing:
+        distribution_type: app_store
+        bundle_identifier: com.personal.savingsTracker
+    scripts:
+      - name: Get Flutter packages
+        script: |
+          flutter pub get
+      - name: Apply provisioning profiles
+        script: |
+          xcode-project use-profiles
+      - name: Build IPA
+        script: |
+          flutter build ipa --release \
+            --export-options-plist=$HOME/export_options.plist
+    artifacts:
+      - build/ios/ipa/*.ipa
