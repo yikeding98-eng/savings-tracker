@@ -45,11 +45,18 @@ flutter run -d edge          # 用 Edge 预览（这台机器没装 Chrome）
 
 ## 二、不用 Mac：Codemagic 云构建出 IPA
 
-### 1. 代码放上 GitHub
+### 1. 代码已经在 GitHub 上
 
-1. 装 GitHub Desktop：https://desktop.github.com
-2. File → Add local repository → 选 `savings_tracker` 文件夹
-3. 提示 not a git repository 时点 **create repository**，再 Publish repository（建议勾 Private）
+仓库地址：https://github.com/yikeding98-eng/savings-tracker （分支 `main`）
+
+改完代码推上去就是一轮：
+
+```powershell
+cd C:\Users\Admin1\Doubao\chats\2026-11-10\new-chat-7\savings_tracker
+git add -A
+git commit -m "改动说明"
+git push
+```
 
 ### 2. Codemagic 构建
 
