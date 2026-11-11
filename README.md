@@ -72,9 +72,16 @@ git push
 
 ---
 
-## 三、装到自己 iPhone（Windows 就能做）
+## 三、装到自己 iPhone
 
-### 方式 A：Sideloadly（最直接）
+### 首推：已有 p12 → TestFlight（不用数据线、不用每周续签）
+
+选 `ios-testflight` workflow，Codemagic 用你的证书签名后自动上传 TestFlight，手机装 TestFlight App 安装即可。
+完整步骤见 **[docs/TestFlight上线步骤.md](docs/TestFlight上线步骤.md)**。
+
+### 没有证书：免费 Apple ID 侧载（Windows 就能做）
+
+#### 方式 A：Sideloadly（最直接）
 
 1. https://sideloadly.io 装到这台 Windows
 2. iPhone 数据线连电脑，手机上点「信任此电脑」
@@ -83,7 +90,7 @@ git push
 5. 手机：设置 → 通用 → VPN与设备管理 → 开发者 App → 信任你的 Apple ID
 6. iOS 16+ 还要：设置 → 隐私与安全性 → **开发者模式** 打开 → 重启手机
 
-### 方式 B：AltStore（能自动续签，长期推荐）
+#### 方式 B：AltStore（能自动续签，长期推荐）
 
 1. 这台 Windows 装 **AltServer**（https://altstore.io），托盘右键 → Install AltStore → 选你的 iPhone
 2. 手机上用 AltStore 安装 `SavingsTracker.ipa`

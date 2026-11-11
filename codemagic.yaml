@@ -1,5 +1,6 @@
 workflows:
   # 路线一：免费 Apple ID 侧载（不含主屏幕小组件，小组件需要 App Group）
+  # 已经有 p12 的话不用走这条，直接用下面的 ios-testflight。
   ios-personal:
     name: iOS 未签名 IPA（配 Sideloadly / AltStore 自签安装）
     instance_type: mac_mini_m2
@@ -30,12 +31,14 @@ workflows:
       - build/ios/iphoneos/SavingsTracker.ipa
       - build/ios/iphoneos/Runner.app
 
-  # 路线二：带主屏幕小组件（需 $99 开发者账号 + 已上传签名证书/描述文件 + App Store Connect 集成）
-  # 使用前请看 docs/小组件配置步骤.md，并把 integrations.app_store_connect 换成你在
-  # Codemagic Teams → Integrations 里建的 Key 名称；ios_signing 需要先在
-  # App Settings → Code signing identities 里上传 Distribution 证书和 App Store 描述文件。
+  # 路线二：已签名 + 自动上传 TestFlight（有自己的 p12 / 付费开发者账号就选这条）
+  # 使用前必须做三件事，详见 docs/TestFlight上线步骤.md：
+  #   1. App Store Connect 里建好 App 记录（Bundle ID: com.personal.savingsTracker）
+  #   2. Codemagic → Teams → Integrations → Developer Portal 里添加 App Store Connect API Key
+  #   3. Codemagic → App → Settings → Code signing identities 里上传 p12 + App Store 描述文件
+  # 然后把下面的 REPLACE_WITH_YOUR_KEY_NAME 换成第 2 步里起的名字
   ios-testflight:
-    name: iOS 带小组件（TestFlight，需付费账号）
+    name: iOS 已签名并上传 TestFlight
     instance_type: mac_mini_m2
     max_build_duration: 90
     integrations:
@@ -52,10 +55,18 @@ workflows:
           flutter pub get
       - name: Apply provisioning profiles
         script: |
-          xcode-project use-profiles
+          # testFlightInternalTestingOnly：只发给内部测试员，跳过 Apple 的 Beta 审核
+          xcode-project use-profiles \
+            --custom-export-options='{"testFlightInternalTestingOnly": true}'
       - name: Build IPA
         script: |
+          # 每次上传的 build number 必须唯一，用时间戳保证不会撞车
           flutter build ipa --release \
+            --build-number=$(date +%s) \
             --export-options-plist=$HOME/export_options.plist
     artifacts:
       - build/ios/ipa/*.ipa
+    publishing:
+      app_store_connect:
+        auth: integration
+        submit_to_testflight: true
