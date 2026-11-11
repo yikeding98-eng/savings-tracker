@@ -107,6 +107,18 @@ class AppState extends ChangeNotifier {
 
   Future<String> exportJson() => storage.exportJson(_deposits, _settings);
 
+  /// 从剪贴板里的 JSON 备份恢复。格式不对返回 null，成功返回恢复的记录条数。
+  Future<int?> importJson(String raw) async {
+    final result = await storage.importJson(raw);
+    if (result == null) return null;
+    final (deposits, settings) = result;
+    _deposits = deposits;
+    _settings = settings;
+    notifyListeners();
+    await _reschedule();
+    return deposits.length;
+  }
+
   Future<void> rescheduleReminder() => _reschedule();
 
   Future<void> _reschedule() async {

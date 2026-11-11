@@ -127,20 +127,20 @@ git push
 
 ---
 
-## 五、主屏幕小组件（已写好代码，但有硬前提）
+## 五、主屏幕小组件（代码已写好，缺两个前提）
 
 代码全在仓库里，App 侧的数据推送也接好了：每次改动数据都会把快照写进 App Group 并刷新小组件。
 
-**但要用起来，必须先满足两个条件：**
+**要用起来必须先满足两个条件：**
 
-1. **付费开发者账号（$99/年）** —— 小组件读 App 数据只能走 App Group，免费 Apple ID 的描述文件里没有这个授权，装上也会一直显示「打开存款管家」。换签名器、勾自定义 entitlements 都没用，问题不在签名器而在描述文件。
+1. **自己名下 $99/年 的开发者账号** —— 小组件读 App 数据只能走 App Group，免费 Apple ID 的描述文件里没有这个授权，装上也会一直显示「打开存款管家」。换签名器、勾自定义 entitlements 都没用，问题不在签名器而在描述文件。
 
-   > 另外：淘宝/签名平台买的企业证书（第三方签名）同样不行 —— 它只给你主 App 一个 Bundle ID 的签名，无法创建 App Group，而且证书随时可能被吊销导致 App 直接打不开。要小组件只能自己开 $99 账号。
-2. **用一次 Xcode 创建 Widget 扩展 target** —— 扩展是项目里独立的 target、独立 Bundle ID，只能在 Xcode 里建。租一小时云 Mac（MacinCloud/MacStadium，$1~2/小时）就能做完，15 分钟。
+   > 淘宝/签名平台买的企业证书（第三方签名）同样不行 —— 它只给主 App 一个 Bundle ID 签名，无法创建 App Group，而且证书随时可能被吊销导致 App 直接打不开。
+2. **把扩展注册成独立 target** —— 已经由 `ios/scripts/add_widget_target.rb` 在云端自动完成，**不需要 Mac**：CI 会新建 target、把 `.appex` 嵌进主 App、给两边挂上 entitlements。日志里看到 `[add_widget_target] 校验通过` 就是成功。
 
-完整操作步骤（Apple 后台配 App Group → Xcode 建扩展 → Codemagic 自动签名 → TestFlight 装机）写在 **[docs/小组件配置步骤.md](docs/小组件配置步骤.md)**。
+完整操作步骤（开账号 → Apple 后台配 App Group → Codemagic 上传两套描述文件 → 跑 `ios-testflight` → TestFlight 装 → 加小组件）写在 **[docs/小组件配置步骤.md](docs/小组件配置步骤.md)**。
 
-> 这段 Swift 我这边没有 macOS，无法编译验证。如果 Xcode/Codemagic 报错，把日志贴回来我改。
+> 这段 Swift 和注入脚本我这边没有 macOS，无法本地编译验证。报错时把日志里 `失败：` 那几行贴回来我改。
 
 ---
 

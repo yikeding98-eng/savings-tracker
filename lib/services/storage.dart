@@ -55,6 +55,38 @@ class Storage {
     });
   }
 
+  /// 从 [exportJson] 产出的字符串恢复数据。格式不对返回 null。
+  Future<(List<Deposit>, AppSettings)?> importJson(String raw) async {
+    dynamic decoded;
+    try {
+      decoded = jsonDecode(raw);
+    } catch (_) {
+      return null;
+    }
+    if (decoded is! Map<String, dynamic>) return null;
+
+    final rawDeposits = decoded['deposits'];
+    if (rawDeposits is! List) return null;
+
+    final deposits = <Deposit>[];
+    for (final item in rawDeposits) {
+      if (item is Map<String, dynamic>) {
+        deposits.add(Deposit.fromJson(item));
+      }
+    }
+    deposits.sort((a, b) => b.date.compareTo(a.date));
+
+    var settings = const AppSettings();
+    final rawSettings = decoded['settings'];
+    if (rawSettings is Map<String, dynamic>) {
+      settings = AppSettings.fromJson(rawSettings);
+    }
+
+    await saveDeposits(deposits);
+    await saveSettings(settings);
+    return (deposits, settings);
+  }
+
   Future<void> clearAll() async {
     final sp = await SharedPreferences.getInstance();
     await sp.remove(_kDeposits);

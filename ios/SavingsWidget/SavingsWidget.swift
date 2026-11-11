@@ -73,9 +73,7 @@ struct SavingsWidget: Widget {
     var body: some WidgetConfiguration {
         StaticConfiguration(kind: kind, provider: Provider()) { entry in
             SavingsWidgetView(entry: entry)
-                .containerBackground(for: .widget) {
-                    Color(red: 0.985, green: 0.968, blue: 0.925)
-                }
+                .widgetBackground()
         }
         .configurationDisplayName("存款进度")
         .description("当前存款、目标进度和本月已存，数据来自存款管家 App。")
@@ -195,5 +193,27 @@ struct SavingsWidgetView: View {
         formatter.minimumFractionDigits = 0
         let number = formatter.string(from: NSNumber(value: value)) ?? "0"
         return entry.snapshot.currency + number
+    }
+}
+
+// MARK: - 背景
+// iOS 17 起小组件必须用 containerBackground 才能铺满；更早的系统退回普通背景，
+// 这样小组件在 iOS 15/16 上也能装（边缘圆角由系统自己裁）。
+private struct WidgetBackground: ViewModifier {
+    private let color = Color(red: 0.985, green: 0.968, blue: 0.925)
+
+    @ViewBuilder
+    func body(content: Content) -> some View {
+        if #available(iOSApplicationExtension 17.0, *) {
+            content.containerBackground(for: .widget) { color }
+        } else {
+            content.background(color)
+        }
+    }
+}
+
+extension View {
+    fileprivate func widgetBackground() -> some View {
+        modifier(WidgetBackground())
     }
 }

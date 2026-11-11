@@ -31,14 +31,12 @@ workflows:
       - build/ios/iphoneos/SavingsTracker.ipa
       - build/ios/iphoneos/Runner.app
 
-  # 路线二：已签名 + 自动上传 TestFlight（有自己的 p12 / 付费开发者账号就选这条）
-  # 使用前必须做三件事，详见 docs/TestFlight上线步骤.md：
-  #   1. App Store Connect 里建好 App 记录（Bundle ID: com.personal.savingsTracker）
-  #   2. Codemagic → Teams → Integrations → Developer Portal 里添加 App Store Connect API Key，
-  #      名字必须叫 savings_key（和下面 integrations 里的一致）
-  #   3. Codemagic → App → Settings → Code signing identities 里上传 p12 + App Store 描述文件
+  # 路线二：带主屏幕小组件 + 已签名 + 自动上传 TestFlight
+  # 需要：$99 开发者账号、p12、两个 App Store 描述文件（主 App + 小组件）
+  # 小组件的 target 由 ios/scripts/add_widget_target.rb 在云端自动注入，不需要 Mac。
+  # 完整步骤见 docs/小组件配置步骤.md
   ios-testflight:
-    name: iOS 已签名并上传 TestFlight
+    name: iOS 带小组件 · 已签名 · 上传 TestFlight
     instance_type: mac_mini_m2
     max_build_duration: 90
     integrations:
@@ -48,11 +46,23 @@ workflows:
       xcode: latest
       ios_signing:
         distribution_type: app_store
-        bundle_identifier: com.personal.savingsTracker
+        bundle_identifier:
+          - com.personal.savingsTracker
+          - com.personal.savingsTracker.SavingsWidget
     scripts:
       - name: Get Flutter packages
         script: |
           flutter pub get
+      - name: Prepare build numbers
+        script: |
+          # 构建号每次必须唯一；扩展的 Info.plist 用的是同一个值（主 App 和扩展版本不一致会被 App Store Connect 拒收）
+          echo "WIDGET_BUILD_NUMBER=$(date +%s)" >> $CM_ENV
+          echo "WIDGET_VERSION=$(grep -m1 '^version:' pubspec.yaml | awk '{print $2}' | cut -d'+' -f1)" >> $CM_ENV
+      - name: Register widget extension target
+        script: |
+          # 用脚本把小组件注册进 Xcode 工程，省掉租 Mac 手工建 target
+          gem install xcodeproj --no-document
+          ruby ios/scripts/add_widget_target.rb
       - name: Apply provisioning profiles
         script: |
           # testFlightInternalTestingOnly：只发给内部测试员，跳过 Apple 的 Beta 审核
@@ -60,9 +70,8 @@ workflows:
             --custom-export-options='{"testFlightInternalTestingOnly": true}'
       - name: Build IPA
         script: |
-          # 每次上传的 build number 必须唯一，用时间戳保证不会撞车
           flutter build ipa --release \
-            --build-number=$(date +%s) \
+            --build-number=$WIDGET_BUILD_NUMBER \
             --export-options-plist=$HOME/export_options.plist
     artifacts:
       - build/ios/ipa/*.ipa

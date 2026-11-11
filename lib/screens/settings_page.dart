@@ -113,6 +113,55 @@ class _SettingsPageState extends State<SettingsPage> {
     );
   }
 
+  Future<void> _importData() async {
+    final raw =
+        (await Clipboard.getData(Clipboard.kTextPlain))?.text?.trim() ?? '';
+    if (!mounted) return;
+    if (raw.isEmpty) {
+      _snack('剪贴板里没有内容，先把之前备份的 JSON 复制过来');
+      return;
+    }
+
+    final ok = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('导入备份？'),
+        content: const Text('导入会用备份覆盖当前的记录和设置，建议先复制一份当前数据。'),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('取消')),
+          FilledButton(onPressed: () => Navigator.pop(ctx, true), child: const Text('导入')),
+        ],
+      ),
+    );
+    if (ok != true || !mounted) return;
+
+    final count = await AppScope.of(context).importJson(raw);
+    if (!mounted) return;
+    if (count == null) {
+      _snack('备份格式不对，请确认复制的是完整 JSON');
+      return;
+    }
+    _syncFromState();
+    _snack('已恢复 $count 条记录');
+  }
+
+  void _syncFromState() {
+    final s = AppScope.of(context).settings;
+    setState(() {
+      _targetController.text = s.targetAmount.toStringAsFixed(0);
+      _currency = _currencyOptions.contains(s.currency) ? s.currency : '¥';
+      _reminderEnabled = s.reminderEnabled;
+      _reminderDay = s.reminderDay;
+      _reminderHour = s.reminderHour;
+      _reminderMinute = s.reminderMinute;
+      _targetDate = s.targetDate;
+    });
+  }
+
+  void _snack(String text) {
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(text)));
+  }
+
   Future<void> _clearData() async {
     final ok = await showDialog<bool>(
       context: context,
@@ -299,6 +348,13 @@ class _SettingsPageState extends State<SettingsPage> {
                   leading: const Icon(Icons.copy_all_outlined),
                   title: const Text('复制数据（JSON 备份）', style: TextStyle(fontSize: 14)),
                   onTap: _copyData,
+                ),
+                Divider(height: 1, color: scheme.outlineVariant.withValues(alpha: 0.4)),
+                ListTile(
+                  leading: const Icon(Icons.content_paste_outlined),
+                  title: const Text('粘贴导入备份', style: TextStyle(fontSize: 14)),
+                  subtitle: const Text('换手机或重装后恢复数据', style: TextStyle(fontSize: 11)),
+                  onTap: _importData,
                 ),
                 Divider(height: 1, color: scheme.outlineVariant.withValues(alpha: 0.4)),
                 ListTile(
